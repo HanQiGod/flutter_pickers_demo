@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pickers/address_picker/locations_data.dart';
+import 'package:flutter_pickers/address_picker/route/address_picker_route.dart'
+    as address_route;
 import 'package:flutter_pickers/more_pickers/init_data.dart';
-import 'package:flutter_pickers/pickers.dart';
+import 'package:flutter_pickers/more_pickers/route/multiple_link_picker_route.dart'
+    as multiple_link_route;
+import 'package:flutter_pickers/more_pickers/route/multiple_picker_route.dart'
+    as multiple_route;
+import 'package:flutter_pickers/more_pickers/route/single_picker_route.dart'
+    as single_route;
 import 'package:flutter_pickers/style/picker_style.dart';
 import 'package:flutter_pickers/time_picker/model/date_mode.dart';
 import 'package:flutter_pickers/time_picker/model/pduration.dart';
 import 'package:flutter_pickers/time_picker/model/suffix.dart';
+import 'package:flutter_pickers/time_picker/route/date_picker_route.dart'
+    as date_route;
 
 void main() {
   runApp(const MyApp());
@@ -294,223 +303,273 @@ class _PickerDemoPageState extends State<PickerDemoPage> {
     );
   }
 
+  PickerStyle _preparePickerStyle(PickerStyle style) {
+    style.context ??= context;
+    return style;
+  }
+
+  String get _modalBarrierLabel =>
+      MaterialLocalizations.of(context).modalBarrierDismissLabel;
+
   void _showAddressPicker() {
-    Pickers.showAddressPicker(
-      context,
-      initProvince: _province,
-      initCity: _city,
-      initTown: _town,
-      pickerStyle: _buildPickerStyle(
-        title: '省市区三级联动',
-        badge: '地址选择',
-        helper: '滚动定位目标地区，确认后会立即更新编码和结果展示。',
-        icon: Icons.map_rounded,
-        accent: const Color(0xFF0F766E),
+    Navigator.of(context).push(
+      _FloatingAddressPickerRoute(
+        initProvince: _province,
+        initCity: _city,
+        initTown: _town,
+        addAllItem: true,
+        theme: Theme.of(context),
+        barrierLabel: _modalBarrierLabel,
+        pickerStyle: _preparePickerStyle(
+          _buildPickerStyle(
+            title: '省市区三级联动',
+            badge: '地址选择',
+            helper: '滚动定位目标地区，确认后会立即更新编码和结果展示。',
+            icon: Icons.map_rounded,
+            accent: const Color(0xFF0F766E),
+          ),
+        ),
+        onConfirm: (province, city, town) {
+          setState(() {
+            _province = province;
+            _city = city;
+            _town = town ?? '';
+            _cityCodes = Address.getCityCodeByName(
+              provinceName: _province,
+              cityName: _city,
+              townName: _town,
+            );
+            _status = '地址选择完成：$_province - $_city - $_town';
+          });
+        },
       ),
-      onConfirm: (province, city, town) {
-        setState(() {
-          _province = province;
-          _city = city;
-          _town = town ?? '';
-          _cityCodes = Address.getCityCodeByName(
-            provinceName: _province,
-            cityName: _city,
-            townName: _town,
-          );
-          _status = '地址选择完成：$_province - $_city - $_town';
-        });
-      },
     );
   }
 
   void _showCityPicker() {
-    Pickers.showAddressPicker(
-      context,
-      initProvince: _provinceOnly,
-      initCity: _cityOnly,
-      initTown: null,
-      pickerStyle: _buildPickerStyle(
-        title: '只选择到市',
-        badge: '二级联动',
-        helper: '保留省市两级选择，更适合城市范围筛选这类场景。',
-        icon: Icons.location_city_rounded,
-        accent: const Color(0xFFEA580C),
-        confirmLabel: '应用',
+    Navigator.of(context).push(
+      _FloatingAddressPickerRoute(
+        initProvince: _provinceOnly,
+        initCity: _cityOnly,
+        initTown: null,
+        addAllItem: true,
+        theme: Theme.of(context),
+        barrierLabel: _modalBarrierLabel,
+        pickerStyle: _preparePickerStyle(
+          _buildPickerStyle(
+            title: '只选择到市',
+            badge: '二级联动',
+            helper: '保留省市两级选择，更适合城市范围筛选这类场景。',
+            icon: Icons.location_city_rounded,
+            accent: const Color(0xFFEA580C),
+            confirmLabel: '应用',
+          ),
+        ),
+        onConfirm: (province, city, town) {
+          setState(() {
+            _provinceOnly = province;
+            _cityOnly = city;
+            _status = '二级地址选择完成：$_provinceOnly - $_cityOnly';
+          });
+        },
       ),
-      onConfirm: (province, city, town) {
-        setState(() {
-          _provinceOnly = province;
-          _cityOnly = city;
-          _status = '二级地址选择完成：$_provinceOnly - $_cityOnly';
-        });
-      },
     );
   }
 
   void _showStyledAddressPicker() {
-    Pickers.showAddressPicker(
-      context,
-      initProvince: _province,
-      initCity: _city,
-      initTown: _town,
-      addAllItem: false,
-      pickerStyle: _buildPickerStyle(
-        title: '自定义地址样式',
-        badge: '夜间模式',
-        helper: '强化对比度、按钮层级和选中边界，让暗色弹窗不再发闷。',
-        icon: Icons.dark_mode_rounded,
-        accent: const Color(0xFF38BDF8),
-        dark: true,
-        confirmLabel: '保存',
-        cancelLabel: '返回',
+    Navigator.of(context).push(
+      _FloatingAddressPickerRoute(
+        initProvince: _province,
+        initCity: _city,
+        initTown: _town,
+        addAllItem: false,
+        theme: Theme.of(context),
+        barrierLabel: _modalBarrierLabel,
+        pickerStyle: _preparePickerStyle(
+          _buildPickerStyle(
+            title: '自定义地址样式',
+            badge: '夜间模式',
+            helper: '强化对比度、按钮层级和选中边界，让暗色弹窗不再发闷。',
+            icon: Icons.dark_mode_rounded,
+            accent: const Color(0xFF38BDF8),
+            dark: true,
+            confirmLabel: '保存',
+            cancelLabel: '返回',
+          ),
+        ),
+        onConfirm: (province, city, town) {
+          setState(() {
+            _province = province;
+            _city = city;
+            _town = town ?? '';
+            _cityCodes = Address.getCityCodeByName(
+              provinceName: _province,
+              cityName: _city,
+              townName: _town,
+            );
+            _status = '暗色自定义样式选择完成：$_province - $_city - $_town';
+          });
+        },
       ),
-      onConfirm: (province, city, town) {
-        setState(() {
-          _province = province;
-          _city = city;
-          _town = town ?? '';
-          _cityCodes = Address.getCityCodeByName(
-            provinceName: _province,
-            cityName: _city,
-            townName: _town,
-          );
-          _status = '暗色自定义样式选择完成：$_province - $_city - $_town';
-        });
-      },
     );
   }
 
   void _showSkillPicker() {
-    Pickers.showSinglePicker(
-      context,
-      data: ['PHP', 'JAVA', 'C++', 'Dart', 'Python', 'Go'],
-      selectData: _skill,
-      suffix: ' 技术栈',
-      pickerStyle: _buildPickerStyle(
-        title: '单项选择器',
-        badge: '技术栈',
-        helper: '适合这类单列枚举数据，确认动作比原始默认样式更清晰。',
-        icon: Icons.code_rounded,
-        accent: const Color(0xFF0F766E),
-        confirmLabel: '选好了',
+    Navigator.of(context).push(
+      _FloatingSinglePickerRoute(
+        data: ['PHP', 'JAVA', 'C++', 'Dart', 'Python', 'Go'],
+        selectData: _skill,
+        suffix: ' 技术栈',
+        theme: Theme.of(context),
+        barrierLabel: _modalBarrierLabel,
+        pickerStyle: _preparePickerStyle(
+          _buildPickerStyle(
+            title: '单项选择器',
+            badge: '技术栈',
+            helper: '适合这类单列枚举数据，确认动作比原始默认样式更清晰。',
+            icon: Icons.code_rounded,
+            accent: const Color(0xFF0F766E),
+            confirmLabel: '选好了',
+          ),
+        ),
+        onConfirm: (data, position) {
+          setState(() {
+            _skill = data.toString();
+            _status = '单项选择器已更新：$_skill';
+          });
+        },
       ),
-      onConfirm: (data, position) {
-        setState(() {
-          _skill = data.toString();
-          _status = '单项选择器已更新：$_skill';
-        });
-      },
     );
   }
 
   void _showEducationPicker() {
-    Pickers.showSinglePicker(
-      context,
-      data: PickerDataType.education,
-      selectData: _education,
-      pickerStyle: _buildPickerStyle(
-        title: '内置预设数据',
-        badge: '学历预设',
-        helper: '直接复用库内置的数据源，同时保持统一的新版弹窗视觉。',
-        icon: Icons.school_rounded,
-        accent: const Color(0xFF2563EB),
+    Navigator.of(context).push(
+      _FloatingSinglePickerRoute(
+        data: PickerDataType.education,
+        selectData: _education,
+        theme: Theme.of(context),
+        barrierLabel: _modalBarrierLabel,
+        pickerStyle: _preparePickerStyle(
+          _buildPickerStyle(
+            title: '内置预设数据',
+            badge: '学历预设',
+            helper: '直接复用库内置的数据源，同时保持统一的新版弹窗视觉。',
+            icon: Icons.school_rounded,
+            accent: const Color(0xFF2563EB),
+          ),
+        ),
+        onConfirm: (data, position) {
+          setState(() {
+            _education = data.toString();
+            _status = '内置学历预设已更新：$_education';
+          });
+        },
       ),
-      onConfirm: (data, position) {
-        setState(() {
-          _education = data.toString();
-          _status = '内置学历预设已更新：$_education';
-        });
-      },
     );
   }
 
   void _showMultiPicker() {
-    Pickers.showMultiPicker(
-      context,
-      data: _timeColumns,
-      selectData: _multipleSelection,
-      suffix: const ['', '时', '分', '秒'],
-      pickerStyle: _buildPickerStyle(
-        title: '多项时间选择',
-        badge: '时分秒',
-        helper: '多列并排时增加说明区和高亮选区，阅读负担会明显更小。',
-        icon: Icons.schedule_rounded,
-        accent: const Color(0xFF0EA5E9),
-        confirmLabel: '更新时间',
+    Navigator.of(context).push(
+      _FloatingMultiPickerRoute(
+        data: _timeColumns,
+        selectData: _multipleSelection,
+        suffix: const ['', '时', '分', '秒'],
+        theme: Theme.of(context),
+        barrierLabel: _modalBarrierLabel,
+        pickerStyle: _preparePickerStyle(
+          _buildPickerStyle(
+            title: '多项时间选择',
+            badge: '时分秒',
+            helper: '多列并排时增加说明区和高亮选区，阅读负担会明显更小。',
+            icon: Icons.schedule_rounded,
+            accent: const Color(0xFF0EA5E9),
+            confirmLabel: '更新时间',
+          ),
+        ),
+        onConfirm: (res, position) {
+          setState(() {
+            _multipleSelection = List<String>.from(
+              res.map((item) => item.toString()),
+            );
+            _status = '多项选择器已更新：${_multipleSelection.join(' ')}';
+          });
+        },
       ),
-      onConfirm: (res, position) {
-        setState(() {
-          _multipleSelection = List<String>.from(
-            res.map((item) => item.toString()),
-          );
-          _status = '多项选择器已更新：${_multipleSelection.join(' ')}';
-        });
-      },
     );
   }
 
   void _showMultiLinkPicker() {
-    Pickers.showMultiLinkPicker(
-      context,
-      data: _productData,
-      columnNum: 3,
-      selectData: _linkSelection,
-      suffix: const ['', '', ''],
-      pickerStyle: _buildPickerStyle(
-        title: '自定义联动选择器',
-        badge: '商品分类',
-        helper: '联动列之间保持统一节奏，当前所在层级和确认动作更容易识别。',
-        icon: Icons.account_tree_rounded,
-        accent: const Color(0xFFF97316),
-        confirmLabel: '确认分类',
+    Navigator.of(context).push(
+      _FloatingMultiLinkPickerRoute(
+        data: _productData,
+        columnNum: 3,
+        selectData: _linkSelection,
+        suffix: const ['', '', ''],
+        theme: Theme.of(context),
+        barrierLabel: _modalBarrierLabel,
+        pickerStyle: _preparePickerStyle(
+          _buildPickerStyle(
+            title: '自定义联动选择器',
+            badge: '商品分类',
+            helper: '联动列之间保持统一节奏，当前所在层级和确认动作更容易识别。',
+            icon: Icons.account_tree_rounded,
+            accent: const Color(0xFFF97316),
+            confirmLabel: '确认分类',
+          ),
+        ),
+        onConfirm: (res, position) {
+          setState(() {
+            _linkSelection = List<String>.from(
+              res.map((item) => item.toString()),
+            );
+            _status = '联动选择器已更新：${_linkSelection.join(' - ')}';
+          });
+        },
       ),
-      onConfirm: (res, position) {
-        setState(() {
-          _linkSelection = List<String>.from(
-            res.map((item) => item.toString()),
-          );
-          _status = '联动选择器已更新：${_linkSelection.join(' - ')}';
-        });
-      },
     );
   }
 
   void _showDatePicker() {
-    Pickers.showDatePicker(
-      context,
-      mode: DateMode.YMDHMS,
-      selectDate: _copyDuration(_selectedDate),
-      minDate: PDuration(year: 2020),
-      maxDate: PDuration(
-        year: 2030,
-        month: 12,
-        day: 31,
-        hour: 23,
-        minute: 59,
-        second: 59,
+    Navigator.of(context).push(
+      _FloatingDatePickerRoute(
+        mode: DateMode.YMDHMS,
+        initDate: _copyDuration(_selectedDate),
+        minDate: PDuration(year: 2020),
+        maxDate: PDuration(
+          year: 2030,
+          month: 12,
+          day: 31,
+          hour: 23,
+          minute: 59,
+          second: 59,
+        ),
+        suffix: Suffix(
+          years: '年',
+          month: '月',
+          days: '日',
+          hours: '时',
+          minutes: '分',
+          seconds: '秒',
+        ),
+        theme: Theme.of(context),
+        barrierLabel: _modalBarrierLabel,
+        pickerStyle: _preparePickerStyle(
+          _buildPickerStyle(
+            title: '时间选择器',
+            badge: '日期时间',
+            helper: '用更明确的顶部信息和选中态承载长字段时间滚轮。',
+            icon: Icons.event_rounded,
+            accent: const Color(0xFF14B8A6),
+            confirmLabel: '确认时间',
+          ),
+        ),
+        onConfirm: (value) {
+          setState(() {
+            _selectedDate = _copyDuration(value);
+            _status = '时间选择器已更新：${_formatDuration(_selectedDate)}';
+          });
+        },
       ),
-      suffix: Suffix(
-        years: '年',
-        month: '月',
-        days: '日',
-        hours: '时',
-        minutes: '分',
-        seconds: '秒',
-      ),
-      pickerStyle: _buildPickerStyle(
-        title: '时间选择器',
-        badge: '日期时间',
-        helper: '用更明确的顶部信息和选中态承载长字段时间滚轮。',
-        icon: Icons.event_rounded,
-        accent: const Color(0xFF14B8A6),
-        confirmLabel: '确认时间',
-      ),
-      onConfirm: (value) {
-        setState(() {
-          _selectedDate = _copyDuration(value);
-          _status = '时间选择器已更新：${_formatDuration(_selectedDate)}';
-        });
-      },
     );
   }
 
@@ -855,6 +914,452 @@ class _PickerDemoPageState extends State<PickerDemoPage> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+double _pickerDialogHeight(PickerStyle style) {
+  var height = style.pickerHeight;
+  if (style.showTitleBar) {
+    height += style.pickerTitleHeight;
+  }
+  if (style.menu != null) {
+    height += style.menuHeight;
+  }
+  return height;
+}
+
+Widget _buildFloatingPickerPage({
+  required BuildContext context,
+  required Animation<double> animation,
+  required PickerStyle pickerStyle,
+  required Widget child,
+  ThemeData? theme,
+}) {
+  Widget page = MediaQuery.removePadding(
+    context: context,
+    removeTop: true,
+    child: child,
+  );
+
+  if (theme != null) {
+    page = Theme(data: theme, child: page);
+  }
+
+  return _PickerDialogShell(
+    animation: animation,
+    pickerStyle: pickerStyle,
+    child: page,
+  );
+}
+
+class _FloatingAddressPickerRoute<T>
+    extends address_route.AddressPickerRoute<T> {
+  _FloatingAddressPickerRoute({
+    required super.addAllItem,
+    required super.pickerStyle,
+    required super.initProvince,
+    required super.initCity,
+    super.initTown,
+    super.onChanged,
+    super.onConfirm,
+    super.onCancel,
+    super.theme,
+    super.barrierLabel,
+    super.settings,
+  });
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 280);
+
+  @override
+  Color get barrierColor => const Color(0x70101828);
+
+  @override
+  AnimationController createAnimationController() {
+    final controller = BottomSheet.createAnimationController(
+      navigator!.overlay!,
+    );
+    controller.duration = transitionDuration;
+    controller.reverseDuration = const Duration(milliseconds: 220);
+    return controller;
+  }
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    return _buildFloatingPickerPage(
+      context: context,
+      animation: animation,
+      pickerStyle: pickerStyle,
+      theme: theme,
+      child: address_route.PickerContentView(
+        initProvince: initProvince,
+        initCity: initCity,
+        initTown: initTown,
+        addAllItem: addAllItem,
+        pickerStyle: pickerStyle,
+        route: this,
+      ),
+    );
+  }
+}
+
+class _FloatingSinglePickerRoute<T> extends single_route.SinglePickerRoute<T> {
+  _FloatingSinglePickerRoute({
+    required super.data,
+    super.selectData,
+    super.suffix,
+    required super.pickerStyle,
+    super.onChanged,
+    super.onConfirm,
+    super.onCancel,
+    required super.theme,
+    super.barrierLabel,
+    super.settings,
+  });
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 280);
+
+  @override
+  Color get barrierColor => const Color(0x70101828);
+
+  @override
+  AnimationController createAnimationController() {
+    final controller = BottomSheet.createAnimationController(
+      navigator!.overlay!,
+    );
+    controller.duration = transitionDuration;
+    controller.reverseDuration = const Duration(milliseconds: 220);
+    return controller;
+  }
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    List items = [];
+    if (data is PickerDataType) {
+      items = pickerData[data]!;
+    } else if (data is List) {
+      items.addAll(data as List);
+    }
+
+    return _buildFloatingPickerPage(
+      context: context,
+      animation: animation,
+      pickerStyle: pickerStyle,
+      theme: theme,
+      child: single_route.PickerContentView(
+        data: items,
+        selectData: selectData,
+        pickerStyle: pickerStyle,
+        route: this,
+      ),
+    );
+  }
+}
+
+class _FloatingMultiPickerRoute<T>
+    extends multiple_route.MultiplePickerRoute<T> {
+  _FloatingMultiPickerRoute({
+    required super.pickerStyle,
+    required super.data,
+    required super.selectData,
+    super.suffix,
+    super.onChanged,
+    super.onConfirm,
+    super.onCancel,
+    super.theme,
+    super.barrierLabel,
+    super.settings,
+  });
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 280);
+
+  @override
+  Color get barrierColor => const Color(0x70101828);
+
+  @override
+  AnimationController createAnimationController() {
+    final controller = BottomSheet.createAnimationController(
+      navigator!.overlay!,
+    );
+    controller.duration = transitionDuration;
+    controller.reverseDuration = const Duration(milliseconds: 220);
+    return controller;
+  }
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    return _buildFloatingPickerPage(
+      context: context,
+      animation: animation,
+      pickerStyle: pickerStyle,
+      theme: theme,
+      child: multiple_route.PickerContentView(
+        data: data,
+        selectData: selectData,
+        pickerStyle: pickerStyle,
+        route: this,
+      ),
+    );
+  }
+}
+
+class _FloatingMultiLinkPickerRoute<T>
+    extends multiple_link_route.MultipleLinkPickerRoute<T> {
+  _FloatingMultiLinkPickerRoute({
+    required super.pickerStyle,
+    required super.data,
+    required super.selectData,
+    required super.columnNum,
+    super.suffix,
+    super.onChanged,
+    super.onConfirm,
+    super.onCancel,
+    super.theme,
+    super.barrierLabel,
+    super.settings,
+  });
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 280);
+
+  @override
+  Color get barrierColor => const Color(0x70101828);
+
+  @override
+  AnimationController createAnimationController() {
+    final controller = BottomSheet.createAnimationController(
+      navigator!.overlay!,
+    );
+    controller.duration = transitionDuration;
+    controller.reverseDuration = const Duration(milliseconds: 220);
+    return controller;
+  }
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    return _buildFloatingPickerPage(
+      context: context,
+      animation: animation,
+      pickerStyle: pickerStyle,
+      theme: theme,
+      child: multiple_link_route.PickerContentView(
+        data: data,
+        columnNum: columnNum,
+        selectData: selectData,
+        pickerStyle: pickerStyle,
+        route: this,
+      ),
+    );
+  }
+}
+
+class _FloatingDatePickerRoute<T> extends date_route.DatePickerRoute<T> {
+  _FloatingDatePickerRoute({
+    required super.mode,
+    required super.initDate,
+    required PickerStyle pickerStyle,
+    required super.maxDate,
+    required super.minDate,
+    super.suffix,
+    super.onChanged,
+    super.onConfirm,
+    super.onCancel,
+    super.theme,
+    super.barrierLabel,
+    super.settings,
+  }) : super(pickerStyle: pickerStyle);
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 280);
+
+  @override
+  Color get barrierColor => const Color(0x70101828);
+
+  @override
+  AnimationController createAnimationController() {
+    final controller = BottomSheet.createAnimationController(
+      navigator!.overlay!,
+    );
+    controller.duration = transitionDuration;
+    controller.reverseDuration = const Duration(milliseconds: 220);
+    return controller;
+  }
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    return _buildFloatingPickerPage(
+      context: context,
+      animation: animation,
+      pickerStyle: pickerStyle!,
+      theme: theme,
+      child: date_route.PickerContentView(
+        mode: mode,
+        initData: initDate,
+        maxDate: maxDate,
+        minDate: minDate,
+        pickerStyle: pickerStyle!,
+        route: this,
+      ),
+    );
+  }
+}
+
+class _PickerDialogShell extends StatelessWidget {
+  const _PickerDialogShell({
+    required this.animation,
+    required this.pickerStyle,
+    required this.child,
+  });
+
+  final Animation<double> animation;
+  final PickerStyle pickerStyle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInQuad,
+    );
+    final height = _pickerDialogHeight(pickerStyle);
+
+    return Material(
+      color: Colors.transparent,
+      child: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(14, 24, 14, 12),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: FadeTransition(
+            opacity: curved,
+            child: AnimatedBuilder(
+              animation: curved,
+              builder: (context, _) {
+                return Transform.translate(
+                  offset: Offset(0, (1 - curved.value) * 18),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 560),
+                    child: SizedBox(
+                      height: height,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(32),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x33101828),
+                              blurRadius: 42,
+                              offset: Offset(0, 18),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              const DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Color(0xFFF8FBFC),
+                                      Color(0xFFEDF4F3),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              child,
+                              Positioned(
+                                top: 10,
+                                left: 0,
+                                right: 0,
+                                child: IgnorePointer(
+                                  child: Center(
+                                    child: Container(
+                                      width: 42,
+                                      height: 5,
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFFB8C6D4,
+                                        ).withValues(alpha: 0.78),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                child: IgnorePointer(
+                                  child: Container(
+                                    height: 58,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.white.withValues(alpha: 0.24),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(32),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.58,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
