@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pickers/address_picker/locations_data.dart';
 import 'package:flutter_pickers/more_pickers/init_data.dart';
 import 'package:flutter_pickers/pickers.dart';
-import 'package:flutter_pickers/style/default_style.dart';
 import 'package:flutter_pickers/style/picker_style.dart';
 import 'package:flutter_pickers/time_picker/model/date_mode.dart';
 import 'package:flutter_pickers/time_picker/model/pduration.dart';
@@ -47,6 +46,12 @@ class PickerDemoPage extends StatefulWidget {
 }
 
 class _PickerDemoPageState extends State<PickerDemoPage> {
+  static const Color _popupSurface = Color(0xFFFFFFFF);
+  static const Color _popupCanvas = Color(0xFFF8FAFC);
+  static const Color _popupInk = Color(0xFF0F172A);
+  static const Color _popupMuted = Color(0xFF64748B);
+  static const Color _popupBorder = Color(0xFFD9E5E2);
+
   static const Map<String, dynamic> _productData = {
     '数码产品': {
       '手机': ['华为', '小米', '苹果', '三星'],
@@ -110,13 +115,198 @@ class _PickerDemoPageState extends State<PickerDemoPage> {
     );
   }
 
+  PickerStyle _buildPickerStyle({
+    required String title,
+    required String badge,
+    required String helper,
+    required IconData icon,
+    required Color accent,
+    bool dark = false,
+    String confirmLabel = '确认',
+    String cancelLabel = '取消',
+  }) {
+    final topPanel = dark ? const Color(0xFF020617) : _popupSurface;
+    final contentPanel = dark ? const Color(0xFF0F172A) : _popupCanvas;
+    final infoPanel = dark ? const Color(0xFF111827) : const Color(0xFFF1F5F9);
+    final primaryText = dark ? Colors.white : _popupInk;
+    final secondaryText = dark ? const Color(0xFFCBD5E1) : _popupMuted;
+    final divider = dark ? const Color(0xFF1E293B) : _popupBorder;
+
+    return PickerStyle(
+      pickerTitleHeight: 74,
+      menuHeight: 82,
+      pickerHeight: 248,
+      pickerItemHeight: 48,
+      backgroundColor: contentPanel,
+      textColor: primaryText,
+      headDecoration: BoxDecoration(
+        color: topPanel,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        border: Border(bottom: BorderSide(color: divider)),
+      ),
+      cancelButton: Container(
+        margin: const EdgeInsets.only(left: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: dark
+              ? Colors.white.withValues(alpha: 0.08)
+              : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: dark ? divider : const Color(0xFFE2E8F0)),
+        ),
+        child: Text(
+          cancelLabel,
+          style: TextStyle(
+            color: secondaryText,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      commitButton: Container(
+        margin: const EdgeInsets.only(right: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              accent,
+              accent.withValues(alpha: dark ? 0.78 : 0.92),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: accent.withValues(alpha: dark ? 0.18 : 0.26),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Text(
+          confirmLabel,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      title: Padding(
+        padding: const EdgeInsets.only(left: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: dark ? 0.18 : 0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: accent, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    badge,
+                    style: TextStyle(
+                      color: accent,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: primaryText,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      menu: Container(
+        height: 82,
+        color: topPanel,
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: infoPanel,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: accent.withValues(alpha: dark ? 0.32 : 0.16),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: dark ? 0.2 : 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    badge,
+                    style: TextStyle(
+                      color: accent,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    helper,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: secondaryText,
+                      fontSize: 13,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.unfold_more_rounded, color: accent, size: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+      itemOverlay: _PickerSelectionOverlay(accent: accent, dark: dark),
+    );
+  }
+
   void _showAddressPicker() {
     Pickers.showAddressPicker(
       context,
       initProvince: _province,
       initCity: _city,
       initTown: _town,
-      pickerStyle: DefaultPickerStyle(title: '省市区三级联动'),
+      pickerStyle: _buildPickerStyle(
+        title: '省市区三级联动',
+        badge: '地址选择',
+        helper: '滚动定位目标地区，确认后会立即更新编码和结果展示。',
+        icon: Icons.map_rounded,
+        accent: const Color(0xFF0F766E),
+      ),
       onConfirm: (province, city, town) {
         setState(() {
           _province = province;
@@ -139,7 +329,14 @@ class _PickerDemoPageState extends State<PickerDemoPage> {
       initProvince: _provinceOnly,
       initCity: _cityOnly,
       initTown: null,
-      pickerStyle: ClosePickerStyle(haveRadius: true, title: '只选择到市'),
+      pickerStyle: _buildPickerStyle(
+        title: '只选择到市',
+        badge: '二级联动',
+        helper: '保留省市两级选择，更适合城市范围筛选这类场景。',
+        icon: Icons.location_city_rounded,
+        accent: const Color(0xFFEA580C),
+        confirmLabel: '应用',
+      ),
       onConfirm: (province, city, town) {
         setState(() {
           _provinceOnly = province;
@@ -157,59 +354,15 @@ class _PickerDemoPageState extends State<PickerDemoPage> {
       initCity: _city,
       initTown: _town,
       addAllItem: false,
-      pickerStyle: PickerStyle(
-        showTitleBar: true,
-        title: const Center(
-          child: Text(
-            '自定义地址样式',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-          ),
-        ),
-        cancelButton: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 18),
-          child: Center(
-            child: Text(
-              '取消',
-              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16),
-            ),
-          ),
-        ),
-        commitButton: Container(
-          alignment: Alignment.center,
-          margin: const EdgeInsets.only(right: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0EA5E9),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: const Text(
-            '确定',
-            style: TextStyle(color: Colors.white, fontSize: 15),
-          ),
-        ),
-        headDecoration: const BoxDecoration(
-          color: Color(0xFF0F172A),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-        ),
-        backgroundColor: const Color(0xFF111827),
-        textColor: Colors.white,
-        pickerItemHeight: 46,
-        itemOverlay: IgnorePointer(
-          child: Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 14),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.all(Radius.circular(14)),
-                  border: Border.fromBorderSide(
-                    BorderSide(color: Color(0xFF38BDF8), width: 1.2),
-                  ),
-                ),
-                child: SizedBox.expand(),
-              ),
-            ),
-          ),
-        ),
+      pickerStyle: _buildPickerStyle(
+        title: '自定义地址样式',
+        badge: '夜间模式',
+        helper: '强化对比度、按钮层级和选中边界，让暗色弹窗不再发闷。',
+        icon: Icons.dark_mode_rounded,
+        accent: const Color(0xFF38BDF8),
+        dark: true,
+        confirmLabel: '保存',
+        cancelLabel: '返回',
       ),
       onConfirm: (province, city, town) {
         setState(() {
@@ -233,9 +386,13 @@ class _PickerDemoPageState extends State<PickerDemoPage> {
       data: ['PHP', 'JAVA', 'C++', 'Dart', 'Python', 'Go'],
       selectData: _skill,
       suffix: ' 技术栈',
-      pickerStyle: RaisedPickerStyle(
+      pickerStyle: _buildPickerStyle(
         title: '单项选择器',
-        color: const Color(0xFF0F766E),
+        badge: '技术栈',
+        helper: '适合这类单列枚举数据，确认动作比原始默认样式更清晰。',
+        icon: Icons.code_rounded,
+        accent: const Color(0xFF0F766E),
+        confirmLabel: '选好了',
       ),
       onConfirm: (data, position) {
         setState(() {
@@ -251,7 +408,13 @@ class _PickerDemoPageState extends State<PickerDemoPage> {
       context,
       data: PickerDataType.education,
       selectData: _education,
-      pickerStyle: DefaultPickerStyle.dark(title: '内置预设数据'),
+      pickerStyle: _buildPickerStyle(
+        title: '内置预设数据',
+        badge: '学历预设',
+        helper: '直接复用库内置的数据源，同时保持统一的新版弹窗视觉。',
+        icon: Icons.school_rounded,
+        accent: const Color(0xFF2563EB),
+      ),
       onConfirm: (data, position) {
         setState(() {
           _education = data.toString();
@@ -267,7 +430,14 @@ class _PickerDemoPageState extends State<PickerDemoPage> {
       data: _timeColumns,
       selectData: _multipleSelection,
       suffix: const ['', '时', '分', '秒'],
-      pickerStyle: NoTitleStyle.dark(),
+      pickerStyle: _buildPickerStyle(
+        title: '多项时间选择',
+        badge: '时分秒',
+        helper: '多列并排时增加说明区和高亮选区，阅读负担会明显更小。',
+        icon: Icons.schedule_rounded,
+        accent: const Color(0xFF0EA5E9),
+        confirmLabel: '更新时间',
+      ),
       onConfirm: (res, position) {
         setState(() {
           _multipleSelection = List<String>.from(
@@ -286,7 +456,14 @@ class _PickerDemoPageState extends State<PickerDemoPage> {
       columnNum: 3,
       selectData: _linkSelection,
       suffix: const ['', '', ''],
-      pickerStyle: ClosePickerStyle.dark(haveRadius: true, title: '自定义联动选择器'),
+      pickerStyle: _buildPickerStyle(
+        title: '自定义联动选择器',
+        badge: '商品分类',
+        helper: '联动列之间保持统一节奏，当前所在层级和确认动作更容易识别。',
+        icon: Icons.account_tree_rounded,
+        accent: const Color(0xFFF97316),
+        confirmLabel: '确认分类',
+      ),
       onConfirm: (res, position) {
         setState(() {
           _linkSelection = List<String>.from(
@@ -320,7 +497,14 @@ class _PickerDemoPageState extends State<PickerDemoPage> {
         minutes: '分',
         seconds: '秒',
       ),
-      pickerStyle: DefaultPickerStyle(title: '时间选择器'),
+      pickerStyle: _buildPickerStyle(
+        title: '时间选择器',
+        badge: '日期时间',
+        helper: '用更明确的顶部信息和选中态承载长字段时间滚轮。',
+        icon: Icons.event_rounded,
+        accent: const Color(0xFF14B8A6),
+        confirmLabel: '确认时间',
+      ),
       onConfirm: (value) {
         setState(() {
           _selectedDate = _copyDuration(value);
@@ -508,8 +692,7 @@ class _PickerDemoPageState extends State<PickerDemoPage> {
                     const SizedBox(height: 12),
                     const _InfoTile(
                       label: '已使用样式',
-                      value:
-                          'DefaultPickerStyle / ClosePickerStyle / PickerStyle',
+                      value: '统一品牌弹窗 / 顶部说明区 / 高亮选中层',
                     ),
                   ],
                 ),
@@ -672,6 +855,75 @@ class _PickerDemoPageState extends State<PickerDemoPage> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PickerSelectionOverlay extends StatelessWidget {
+  const _PickerSelectionOverlay({required this.accent, required this.dark});
+
+  final Color accent;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: dark
+                  ? accent.withValues(alpha: 0.14)
+                  : Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: accent.withValues(alpha: dark ? 0.46 : 0.22),
+                width: 1.4,
+              ),
+              boxShadow: dark
+                  ? const []
+                  : [
+                      BoxShadow(
+                        color: accent.withValues(alpha: 0.12),
+                        blurRadius: 22,
+                        offset: const Offset(0, 12),
+                      ),
+                    ],
+            ),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        colors: [
+                          accent.withValues(alpha: dark ? 0.08 : 0.06),
+                          Colors.transparent,
+                          accent.withValues(alpha: dark ? 0.08 : 0.04),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    width: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: dark ? 0.5 : 0.22),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox.expand(),
+              ],
+            ),
           ),
         ),
       ),
