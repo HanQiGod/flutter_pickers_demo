@@ -2261,11 +2261,11 @@ class _PickerSelectionOverlay extends StatelessWidget {
             decoration: BoxDecoration(
               color: editorial
                   ? (dark
-                        ? accent.withValues(alpha: 0.16)
-                        : const Color(0xFFFFFBF5).withValues(alpha: 0.94))
+                        ? accent.withValues(alpha: 0.14)
+                        : accent.withValues(alpha: 0.06))
                   : dark
-                  ? accent.withValues(alpha: 0.14)
-                  : Colors.white.withValues(alpha: 0.9),
+                  ? accent.withValues(alpha: 0.12)
+                  : accent.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(editorial ? 24 : 20),
               border: Border.all(
                 color: accent.withValues(
@@ -2295,14 +2295,14 @@ class _PickerSelectionOverlay extends StatelessWidget {
                         colors: [
                           accent.withValues(
                             alpha: editorial
-                                ? (dark ? 0.1 : 0.09)
-                                : (dark ? 0.08 : 0.06),
+                                ? (dark ? 0.08 : 0.04)
+                                : (dark ? 0.06 : 0.03),
                           ),
                           Colors.transparent,
                           accent.withValues(
                             alpha: editorial
-                                ? (dark ? 0.1 : 0.05)
-                                : (dark ? 0.08 : 0.04),
+                                ? (dark ? 0.08 : 0.03)
+                                : (dark ? 0.06 : 0.02),
                           ),
                         ],
                       ),
