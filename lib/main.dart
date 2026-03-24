@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoTheme;
 import 'package:flutter/material.dart';
 import 'package:flutter_pickers/address_picker/locations_data.dart';
 import 'package:flutter_pickers/address_picker/route/address_picker_route.dart'
@@ -1756,6 +1757,33 @@ Widget _buildFloatingPickerPage({
   if (theme != null) {
     page = Theme(data: theme, child: page);
   }
+
+  final content = page;
+  page = Builder(
+    builder: (pageContext) {
+      final cupertinoTheme = CupertinoTheme.of(pageContext);
+      final cupertinoTextTheme = cupertinoTheme.textTheme;
+      final pickerTextStyle = cupertinoTextTheme.pickerTextStyle.copyWith(
+        color: pickerStyle.textColor,
+        fontSize:
+            pickerStyle.textSize ?? cupertinoTextTheme.pickerTextStyle.fontSize,
+      );
+
+      return CupertinoTheme(
+        data: cupertinoTheme.copyWith(
+          textTheme: cupertinoTextTheme.copyWith(
+            textStyle: cupertinoTextTheme.textStyle.copyWith(
+              color: pickerStyle.textColor,
+            ),
+            pickerTextStyle: pickerTextStyle,
+            dateTimePickerTextStyle: cupertinoTextTheme.dateTimePickerTextStyle
+                .copyWith(color: pickerStyle.textColor),
+          ),
+        ),
+        child: content,
+      );
+    },
+  );
 
   return _PickerDialogShell(
     animation: animation,
