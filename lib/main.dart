@@ -1,4 +1,6 @@
-import 'package:flutter/cupertino.dart' show CupertinoTheme;
+import 'dart:math' show Random;
+
+import 'package:flutter/cupertino.dart' show CupertinoPicker, CupertinoTheme;
 import 'package:flutter/material.dart';
 import 'package:flutter_pickers/address_picker/locations_data.dart';
 import 'package:flutter_pickers/address_picker/route/address_picker_route.dart'
@@ -1835,7 +1837,7 @@ class _FloatingAddressPickerRoute<T>
       animation: animation,
       pickerStyle: pickerStyle,
       theme: theme,
-      child: address_route.PickerContentView(
+      child: _FloatingAddressPickerContentView(
         initProvince: initProvince,
         initCity: initCity,
         initTown: initTown,
@@ -2000,7 +2002,7 @@ class _FloatingMultiLinkPickerRoute<T>
       animation: animation,
       pickerStyle: pickerStyle,
       theme: theme,
-      child: multiple_link_route.PickerContentView(
+      child: _FloatingMultiLinkPickerContentView(
         data: data,
         columnNum: columnNum,
         selectData: selectData,
@@ -2008,6 +2010,578 @@ class _FloatingMultiLinkPickerRoute<T>
         route: this,
       ),
     );
+  }
+}
+
+String _pickerVisibleText(String text) {
+  return text.trim().isEmpty ? ' ' : text;
+}
+
+String _pickerSemanticText(String text, {String fallback = '无可选项'}) {
+  return text.trim().isEmpty ? fallback : text;
+}
+
+class _PickerLabelText extends StatelessWidget {
+  const _PickerLabelText({
+    required this.text,
+    required this.style,
+    this.emptySemanticLabel = '无可选项',
+  });
+
+  final String text;
+  final TextStyle style;
+  final String emptySemanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: _pickerSemanticText(text, fallback: emptySemanticLabel),
+      child: ExcludeSemantics(
+        child: Text(
+          _pickerVisibleText(text),
+          style: style,
+          textAlign: TextAlign.start,
+        ),
+      ),
+    );
+  }
+}
+
+class _FloatingAddressPickerContentView extends StatefulWidget {
+  const _FloatingAddressPickerContentView({
+    required this.initProvince,
+    required this.initCity,
+    this.initTown,
+    required this.addAllItem,
+    required this.pickerStyle,
+    required this.route,
+  });
+
+  final String initProvince;
+  final String initCity;
+  final String? initTown;
+  final bool addAllItem;
+  final PickerStyle pickerStyle;
+  final address_route.AddressPickerRoute route;
+
+  @override
+  State<_FloatingAddressPickerContentView> createState() =>
+      _FloatingAddressPickerContentViewState();
+}
+
+class _FloatingAddressPickerContentViewState
+    extends State<_FloatingAddressPickerContentView> {
+  late final PickerStyle _pickerStyle;
+  late String _currentProvince;
+  late String _currentCity;
+  String? _currentTown;
+  late final bool _addAllItem;
+
+  late List<String> provinces;
+  List<dynamic> cities = [];
+  List<String> towns = [];
+  late bool hasTown;
+
+  late FixedExtentScrollController provinceScrollCtrl;
+  late FixedExtentScrollController cityScrollCtrl;
+  late FixedExtentScrollController townScrollCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentProvince = widget.initProvince;
+    _currentCity = widget.initCity;
+    _currentTown = widget.initTown;
+    _addAllItem = widget.addAllItem;
+    _pickerStyle = widget.pickerStyle;
+    provinces = Address.provinces;
+    hasTown = _currentTown != null;
+    _init();
+  }
+
+  @override
+  void dispose() {
+    provinceScrollCtrl.dispose();
+    cityScrollCtrl.dispose();
+    townScrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _init() {
+    Address.addAllItem = _addAllItem;
+    var pindex = provinces.indexWhere(
+      (province) => province == _currentProvince,
+    );
+    pindex = pindex >= 0 ? pindex : 0;
+    _currentProvince = provinces[pindex];
+
+    cities = Address.getCities(_currentProvince);
+    var cindex = cities.indexWhere((city) => city['name'] == _currentCity);
+    cindex = cindex >= 0 ? cindex : 0;
+    _currentCity = cities[cindex]['name'] as String;
+
+    var tindex = 0;
+    if (hasTown) {
+      towns = _townListFromCityCode(cities[cindex]['cityCode']);
+      tindex = towns.indexWhere((town) => town == _currentTown);
+      tindex = tindex >= 0 ? tindex : 0;
+      _currentTown = towns.isEmpty ? '' : towns[tindex];
+    } else {
+      towns = const [];
+    }
+
+    provinceScrollCtrl = FixedExtentScrollController(initialItem: pindex);
+    cityScrollCtrl = FixedExtentScrollController(initialItem: cindex);
+    townScrollCtrl = FixedExtentScrollController(initialItem: tindex);
+  }
+
+  List<String> _townListFromCityCode(dynamic cityCode) {
+    final values = List<String>.from(Address.getTowns(cityCode));
+    return values.isEmpty ? const [''] : values;
+  }
+
+  void _setProvince(int index) {
+    final selectedProvince = provinces[index];
+    if (_currentProvince == selectedProvince) {
+      return;
+    }
+
+    setState(() {
+      _currentProvince = selectedProvince;
+      cities = Address.getCities(selectedProvince);
+      _currentCity = cities[0]['name'] as String;
+      cityScrollCtrl.jumpToItem(0);
+      if (hasTown) {
+        towns = _townListFromCityCode(cities[0]['cityCode']);
+        _currentTown = towns[0];
+        townScrollCtrl.jumpToItem(0);
+      }
+    });
+
+    _notifyLocationChanged();
+  }
+
+  void _setCity(int index) {
+    index = cities.length > index ? index : 0;
+    final selectedCity = cities[index]['name'] as String;
+    if (_currentCity == selectedCity) {
+      return;
+    }
+
+    setState(() {
+      _currentCity = selectedCity;
+      if (hasTown) {
+        towns = _townListFromCityCode(cities[index]['cityCode']);
+        _currentTown = towns.isNotEmpty ? towns[0] : '';
+        townScrollCtrl.jumpToItem(0);
+      }
+    });
+
+    _notifyLocationChanged();
+  }
+
+  void _setTown(int index) {
+    index = towns.length > index ? index : 0;
+    final selectedTown = towns[index];
+    if (_currentTown == selectedTown) {
+      return;
+    }
+
+    _currentTown = selectedTown;
+    _notifyLocationChanged();
+  }
+
+  void _notifyLocationChanged() {
+    widget.route.onChanged?.call(_currentProvince, _currentCity, _currentTown);
+  }
+
+  double _pickerFontSize(String text) {
+    final ratio = hasTown ? 0.0 : 2.0;
+    if (text.length <= 6) {
+      return 18.0;
+    }
+    if (text.length < 9) {
+      return 16.0 + ratio;
+    }
+    if (text.length < 13) {
+      return 12.0 + ratio;
+    }
+    return 10.0 + ratio;
+  }
+
+  Widget _buildPickerCell({
+    required FixedExtentScrollController controller,
+    required int childCount,
+    required ValueChanged<int> onSelectedItemChanged,
+    required String Function(int index) itemTextBuilder,
+    required String emptySemanticLabel,
+    EdgeInsets padding = const EdgeInsets.all(8),
+  }) {
+    return Expanded(
+      child: Container(
+        padding: padding,
+        child: CupertinoPicker.builder(
+          scrollController: controller,
+          selectionOverlay: _pickerStyle.itemOverlay,
+          itemExtent: _pickerStyle.pickerItemHeight,
+          onSelectedItemChanged: onSelectedItemChanged,
+          childCount: childCount,
+          itemBuilder: (_, index) {
+            final text = itemTextBuilder(index);
+            return Align(
+              alignment: Alignment.center,
+              child: _PickerLabelText(
+                text: text,
+                emptySemanticLabel: emptySemanticLabel,
+                style: TextStyle(
+                  color: _pickerStyle.textColor,
+                  fontSize: _pickerStyle.textSize ?? _pickerFontSize(text),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _renderItemView() {
+    return Container(
+      height: _pickerStyle.pickerHeight,
+      color: _pickerStyle.backgroundColor,
+      child: Row(
+        children: [
+          _buildPickerCell(
+            controller: provinceScrollCtrl,
+            childCount: provinces.length,
+            onSelectedItemChanged: _setProvince,
+            itemTextBuilder: (index) => provinces[index],
+            emptySemanticLabel: '无省份数据',
+          ),
+          _buildPickerCell(
+            controller: cityScrollCtrl,
+            childCount: cities.length,
+            onSelectedItemChanged: _setCity,
+            itemTextBuilder: (index) => cities[index]['name'] as String,
+            emptySemanticLabel: '无城市数据',
+          ),
+          if (hasTown)
+            _buildPickerCell(
+              controller: townScrollCtrl,
+              childCount: towns.length,
+              onSelectedItemChanged: _setTown,
+              itemTextBuilder: (index) => towns[index],
+              emptySemanticLabel: '无区县数据',
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _titleView() {
+    return Container(
+      height: _pickerStyle.pickerTitleHeight,
+      decoration: _pickerStyle.headDecoration,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          InkWell(
+            onTap: () => Navigator.pop(context, false),
+            child: _pickerStyle.cancelButton,
+          ),
+          Expanded(child: _pickerStyle.title),
+          InkWell(
+            onTap: () {
+              widget.route.onConfirm?.call(
+                _currentProvince,
+                _currentCity,
+                _currentTown,
+              );
+              Navigator.pop(context, true);
+            },
+            child: _pickerStyle.commitButton,
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final viewList = <Widget>[];
+    if (_pickerStyle.showTitleBar) {
+      viewList.add(_titleView());
+    }
+    if (_pickerStyle.menu != null) {
+      viewList.add(_pickerStyle.menu!);
+    }
+    viewList.add(_renderItemView());
+    return Column(children: viewList);
+  }
+}
+
+class _FloatingMultiLinkPickerContentView extends StatefulWidget {
+  const _FloatingMultiLinkPickerContentView({
+    required this.data,
+    required this.columnNum,
+    required this.selectData,
+    required this.pickerStyle,
+    required this.route,
+  });
+
+  final Map data;
+  final int columnNum;
+  final List selectData;
+  final PickerStyle pickerStyle;
+  final multiple_link_route.MultipleLinkPickerRoute route;
+
+  @override
+  State<_FloatingMultiLinkPickerContentView> createState() =>
+      _FloatingMultiLinkPickerContentViewState();
+}
+
+class _FloatingMultiLinkPickerContentViewState
+    extends State<_FloatingMultiLinkPickerContentView> {
+  static const String _placeData = '';
+
+  late final PickerStyle _pickerStyle;
+  late final Map _data;
+  late final int _columnNum;
+  late List _selectData;
+  late List<int> _selectDataPosition;
+  final List<List> _columnData = [];
+  final List<FixedExtentScrollController> scrollCtrl = [];
+  late double pickerItemHeight;
+
+  @override
+  void initState() {
+    super.initState();
+    _data = widget.data;
+    _pickerStyle = widget.pickerStyle;
+    _columnNum = widget.columnNum;
+    pickerItemHeight = _pickerStyle.pickerItemHeight;
+    _selectData = [];
+    _selectDataPosition = [];
+
+    for (var i = 0; i < _columnNum; i++) {
+      _selectData.add(
+        i >= widget.selectData.length ? '' : widget.selectData[i],
+      );
+      _selectDataPosition.add(0);
+    }
+
+    _init();
+  }
+
+  @override
+  void dispose() {
+    for (final controller in scrollCtrl) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _init() {
+    scrollCtrl.clear();
+    _columnData.clear();
+
+    for (var i = 0; i < _columnNum; i++) {
+      var pindex = 0;
+      if (i == 0) {
+        pindex = _data.keys.toList().indexOf(_selectData[i]);
+        if (pindex < 0) {
+          _selectData[i] = _data.keys.first;
+          pindex = 0;
+        }
+        _selectDataPosition[i] = pindex;
+        _columnData.add(_data.keys.toList());
+      } else {
+        final nextData = _findNextData(i);
+        if (nextData is Map) {
+          pindex = nextData.keys.toList().indexOf(_selectData[i]);
+          if (pindex < 0) {
+            _selectData[i] = nextData.keys.first;
+            pindex = 0;
+          }
+          _columnData.add(nextData.keys.toList());
+        } else if (nextData is List) {
+          pindex = nextData.indexOf(_selectData[i]);
+          if (pindex < 0) {
+            _selectData[i] = nextData.first;
+            pindex = 0;
+          }
+          _columnData.add(nextData);
+        } else {
+          _selectData[i] = nextData;
+          pindex = 0;
+          _columnData.add([nextData]);
+        }
+        _selectDataPosition[i] = pindex;
+      }
+
+      scrollCtrl.add(FixedExtentScrollController(initialItem: pindex));
+    }
+  }
+
+  dynamic _findNextData(int position) {
+    dynamic nextData;
+    for (var i = 0; i < position; i++) {
+      if (i == 0) {
+        nextData = _data[_selectData[0]];
+      } else {
+        final data = nextData[_selectData[i]];
+        if (data is Map || data is List) {
+          nextData = data;
+        } else {
+          nextData = [data];
+        }
+      }
+
+      if (nextData is! Map && i < position - 1) {
+        return [_placeData];
+      }
+    }
+    return nextData;
+  }
+
+  List _findColumnData(int position) {
+    dynamic nextData;
+    for (var i = 0; i < position; i++) {
+      if (i == 0) {
+        nextData = _data[_selectData[0]];
+      } else {
+        final data = nextData[_selectData[i]];
+        if (data is Map || data is List) {
+          nextData = data;
+        } else {
+          nextData = [data];
+        }
+      }
+
+      if (nextData is Map && i == position - 1) {
+        return nextData.keys.toList();
+      }
+      if (nextData is! Map && i < position - 1) {
+        return [_placeData];
+      }
+    }
+    return nextData as List;
+  }
+
+  void _setPicker(int position, int selectIndex, bool jump) {
+    final selectValue = _columnData[position][selectIndex];
+    _selectData[position] = selectValue;
+    _selectDataPosition[position] = selectIndex;
+    if (jump) {
+      scrollCtrl[position].jumpToItem(selectIndex);
+    }
+
+    if (position < _columnNum - 1) {
+      if (_columnData[position].length == 1 &&
+          _columnData[position].first == _placeData) {
+        _columnData[position + 1] = [_placeData];
+      } else {
+        _columnData[position + 1] = _findColumnData(position + 1);
+      }
+      _setPicker(position + 1, 0, true);
+      return;
+    }
+
+    _notifyLocationChanged();
+  }
+
+  void _notifyLocationChanged() {
+    setState(() {
+      pickerItemHeight =
+          _pickerStyle.pickerItemHeight - Random().nextDouble() / 100000000;
+    });
+    widget.route.onChanged?.call(_selectData, _selectDataPosition);
+  }
+
+  Widget _renderItemView() {
+    final pickerList = List<Widget>.generate(_columnData.length, pickerView);
+
+    return Container(
+      height: _pickerStyle.pickerHeight,
+      color: _pickerStyle.backgroundColor,
+      child: Row(children: pickerList),
+    );
+  }
+
+  Widget pickerView(int position) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: CupertinoPicker.builder(
+          scrollController: scrollCtrl[position],
+          itemExtent: pickerItemHeight,
+          selectionOverlay: _pickerStyle.itemOverlay,
+          onSelectedItemChanged: (selectIndex) {
+            _setPicker(position, selectIndex, false);
+          },
+          childCount: _columnData[position].length,
+          itemBuilder: (_, index) {
+            var suffixText = '';
+            if (widget.route.suffix != null &&
+                position < widget.route.suffix!.length) {
+              suffixText = widget.route.suffix![position].toString();
+            }
+
+            final text = '${_columnData[position][index]}$suffixText';
+            return Align(
+              alignment: Alignment.center,
+              child: _PickerLabelText(
+                text: text,
+                emptySemanticLabel: '无可选项',
+                style: TextStyle(
+                  color: _pickerStyle.textColor,
+                  fontSize: _pickerStyle.textSize ?? 18,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _titleView() {
+    return Container(
+      height: _pickerStyle.pickerTitleHeight,
+      decoration: _pickerStyle.headDecoration,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          InkWell(
+            onTap: () => Navigator.pop(context, false),
+            child: _pickerStyle.cancelButton,
+          ),
+          Expanded(child: _pickerStyle.title),
+          InkWell(
+            onTap: () {
+              widget.route.onConfirm?.call(_selectData, _selectDataPosition);
+              Navigator.pop(context, true);
+            },
+            child: _pickerStyle.commitButton,
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final viewList = <Widget>[];
+    if (_pickerStyle.showTitleBar) {
+      viewList.add(_titleView());
+    }
+    if (_pickerStyle.menu != null) {
+      viewList.add(_pickerStyle.menu!);
+    }
+    viewList.add(_renderItemView());
+    return Column(children: viewList);
   }
 }
 
